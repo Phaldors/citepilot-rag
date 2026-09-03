@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CitePilot — grounded document search</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #101114; color: #f6f6f1; }
+      body { margin: 0; } main { max-width: 880px; margin: 0 auto; padding: 56px 24px; }
+      .eyebrow { color: #d8ff62; font-size: .75rem; font-weight: 700; letter-spacing: .13em; } h1 { font-family: Georgia, serif; font-size: clamp(2.8rem, 8vw, 5.5rem); line-height: .95; margin: 18px 0; } p { color: #b6b9b3; line-height: 1.6; max-width: 620px; }
+      section { border: 1px solid #34363b; background: #191b20; padding: 24px; margin-top: 32px; } label { display:block; margin: 18px 0 8px; font-weight: 600; } input, textarea, button { box-sizing:border-box; width:100%; font:inherit; } input, textarea { background:#101114; border:1px solid #454850; color:#fff; padding:13px; } textarea { min-height:96px; resize:vertical; } button { cursor:pointer; border:0; background:#d8ff62; color:#141510; margin-top:14px; padding:13px; font-weight:800; } #status { min-height: 24px; color:#d8ff62; margin-top:14px; } .source { border-top:1px solid #34363b; padding:18px 0; } .meta { color:#d8ff62; font-size:.8rem; font-weight:700; } .excerpt { white-space:pre-wrap; } .hidden { display:none; }
+    </style>
+  </head>
+  <body><main>
+    <div class="eyebrow">CITEPILOT / V0.1</div><h1>Ask documents.<br />Keep the proof.</h1>
+    <p>Upload a PDF or TXT file, ask a question, and inspect the exact source passages behind the result.</p>
+    <section><label for="document">1. Add a document</label><input id="document" type="file" accept=".pdf,.txt" /><button id="upload">Index document</button><div id="status"></div></section>
+    <section><label for="question">2. Ask a question</label><textarea id="question" placeholder="What does the document say about…"></textarea><button id="ask">Find cited evidence</button><div id="results" class="hidden"><p id="answer"></p><div id="sources"></div></div></section>
+  <script>
+    const status = document.querySelector('#status');
+    document.querySelector('#upload').onclick = async () => { const file = document.querySelector('#document').files[0]; if (!file) return status.textContent = 'Choose a PDF or TXT file first.'; const data = new FormData(); data.append('file', file); status.textContent = 'Indexing…'; const response = await fetch('/api/documents', { method:'POST', body:data }); const result = await response.json(); status.textContent = response.ok ? `${result.filename}: ${result.indexed_chunks} chunks indexed.` : result.detail; };
+    document.querySelector('#ask').onclick = async () => { const question = document.querySelector('#question').value; const response = await fetch('/api/query', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({question}) }); const result = await response.json(); if (!response.ok) return status.textContent = result.detail; document.querySelector('#results').classList.remove('hidden'); document.querySelector('#answer').textContent = result.answer; document.querySelector('#sources').innerHTML = result.sources.map(source => `<article class="source"><div class="meta">${source.document} · page ${source.page} · relevance ${source.relevance}</div><p class="excerpt">${source.excerpt}</p></article>`).join(''); };
+  </script></main></body>
+</html>
