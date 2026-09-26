@@ -61,18 +61,19 @@ class Retriever:
 
 
 def synthesize_answer(question: str, results: list[tuple[Chunk, float]]) -> str:
-    sources = "\n\n".join(f"[{chunk.document_name}, sayfa {chunk.page}] {chunk.text}" for chunk, _ in results)
+    sources = "\n\n".join(f"[{chunk.document_name}, page {chunk.page}] {chunk.text}" for chunk, _ in results)
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {
                 "role": "system",
                 "content": (
-                    "Yalnizca verilen kaynaklari kullanarak cevap ver. Her iddianin yaninda "
-                    "[dosya, sayfa] seklinde kaynak goster. Kaynaklarda cevap yoksa bunu belirt."
+                    "Answer using only the provided sources. Cite each claim like [document, page]. "
+                    "If the sources don't contain the answer, say so. Always answer in the same "
+                    "language as the question, regardless of the sources' or your own language."
                 ),
             },
-            {"role": "user", "content": f"Kaynaklar:\n{sources}\n\nSoru: {question}"},
+            {"role": "user", "content": f"Sources:\n{sources}\n\nQuestion: {question}"},
         ],
     )
     return response.choices[0].message.content
