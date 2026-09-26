@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
 
-from app.retrieval import Retriever, chunk_text
+from app.retrieval import Retriever, chunk_text, synthesize_answer
 
 app = FastAPI(title="CitePilot", version="0.1.0")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -53,5 +53,5 @@ def query_document(request: QueryRequest) -> dict[str, object]:
     if not results:
         raise HTTPException(status_code=404, detail="No relevant source found. Upload a document or ask a more specific question.")
     sources = [{"document": chunk.document_name, "page": chunk.page, "excerpt": chunk.text, "relevance": round(score, 2)} for chunk, score in results]
-    answer = "The strongest evidence is in the sources below. CitePilot currently returns retrieved evidence; an LLM synthesis layer is the next milestone."
+    answer = synthesize_answer(request.question, results)
     return {"answer": answer, "sources": sources}
